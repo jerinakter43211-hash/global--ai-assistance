@@ -95,7 +95,7 @@ export default function Home() {
         <section className="panel">
           <span className="pill">🔒 Private Share</span>
           <h2>শুধু নিজের কথা বলুন</h2>
-          <p>এই জায়গার লেখা পাবলিক ফিডে প্রকাশ করা হবে না। তবে persistent private storage এখনো production database-এর সঙ্গে সংযুক্ত হয়নি—তাই এই সংস্করণে লেখা সংরক্ষণের ভান করা হচ্ছে না।</p>
+          <p>এই জায়গার লেখা পাবলিক ফিডে প্রকাশ করা হবে না। Production database ও encryption key চালু থাকলে এটি encrypted private storage-এ সংরক্ষিত হবে।</p>
           <textarea value={message} onChange={e => setMessage(e.target.value)} placeholder="আপনি কী বলতে চান লিখুন..." />
           <button className="primary" onClick={() => submitPrivate("private_share")} disabled={loading || !message.trim()}>
             {loading ? "সংরক্ষণ হচ্ছে..." : "ব্যক্তিগতভাবে পাঠান"}
@@ -152,7 +152,7 @@ export default function Home() {
       <section className="trust">
         <div><b>Server-side AI</b><span>API key browser-এ প্রকাশ করা হয় না</span></div>
         <div><b>Safety-first</b><span>জরুরি অবস্থায় বাস্তব সেবার পথ দেখানো হবে</span></div>
-        <div><b>Privacy-aware</b><span>অসম্পূর্ণ storage flow-কে সম্পূর্ণ বলে দেখানো হয় না</span></div>
+        <div><b>Privacy-aware</b><span>Private data encrypted storage-এর জন্য প্রস্তুত</span></div>
         <div><b>Admin control</b><span>Admin area server-side authentication ব্যবহার করে</span></div>
       </section>
       <footer>© 2026 Global AI Assistance · <a href="/privacy">Privacy & Safety</a></footer>
