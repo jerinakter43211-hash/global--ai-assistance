@@ -5,7 +5,9 @@ import { redirect } from "next/navigation";
 export default async function AdminPage() {
   const session = await auth();
 
-  if (!isConfiguredAdmin(session?.user?.email)) {
+  const adminEmail = session?.user?.email;
+
+  if (!isConfiguredAdmin(adminEmail)) {
     redirect("/admin/sign-in");
   }
 
@@ -16,7 +18,7 @@ export default async function AdminPage() {
         <h1>Global AI Assistance — Admin Dashboard</h1>
         <p>Authenticated administrator:</p>
         <div className="country">
-          <b>{session.user?.email}</b>
+          <b>{adminEmail}</b>
           <span>Primary administrator</span>
         </div>
 
