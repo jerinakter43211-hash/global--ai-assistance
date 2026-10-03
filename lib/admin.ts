@@ -1,5 +1,11 @@
-export const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "jerinakter43211@gmail.com";
+export const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "";
+
+export function normalizeEmail(email: string | null | undefined) {
+  return email?.trim().toLowerCase() ?? "";
+}
 
 export function isConfiguredAdmin(email: string | null | undefined) {
-  return Boolean(email && email.trim().toLowerCase() === ADMIN_EMAIL.trim().toLowerCase());
+  const configured = normalizeEmail(ADMIN_EMAIL);
+  const candidate = normalizeEmail(email);
+  return Boolean(configured && candidate && configured === candidate);
 }
