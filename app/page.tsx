@@ -19,6 +19,29 @@ export default function Home() {
   const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [saved, setSaved] = useState(false);
+
+  async function submitPrivate(kind: "private_share" | "high_alert") {
+    if (!message.trim() || loading) return;
+    setLoading(true);
+    setError("");
+    setSaved(false);
+    try {
+      const res = await fetch("/api/private", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind, text: message, countryCode: "BD" }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Submission failed");
+      setMessage("");
+      setSaved(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "সংরক্ষণ করা যায়নি।");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function askAI() {
     if (!message.trim() || loading) return;
@@ -60,6 +83,12 @@ export default function Home() {
           <h2>জরুরি সহায়তা</h2>
           <p>তাৎক্ষণিক বিপদে আগে স্থানীয় সরকারি জরুরি সেবায় যোগাযোগ করুন। এই ডেমো নিজে থেকে পুলিশ, ফায়ার, অ্যাম্বুলেন্স বা অন্য কর্তৃপক্ষকে যোগাযোগ করে না।</p>
           <div className="country"><b>🇧🇩 বাংলাদেশ</b><strong>999</strong><span>পুলিশ • ফায়ার • অ্যাম্বুলেন্স</span></div>
+          <textarea value={message} onChange={e => setMessage(e.target.value)} placeholder="যদি নিরাপদ হয়, কী ঘটছে সংক্ষেপে লিখুন..." />
+          <button className="danger" onClick={() => submitPrivate("high_alert")} disabled={loading || !message.trim()}>
+            {loading ? "পাঠানো হচ্ছে..." : "🔒 Admin-এর জন্য private alert পাঠান"}
+          </button>
+          {saved && <p className="successText">High Alert submission private channel-এ পাঠানো হয়েছে।</p>}
+          {error && <p className="errorText">{error}</p>}
           <p className="adminNote">ভবিষ্যতে verified country directory যুক্ত হলে দেশ অনুযায়ী সেবা দেখানো হবে। লোকেশন শেয়ারিং আলাদা সম্মতি নিয়ে যুক্ত করা হবে।</p>
         </section>
       ) : tab === "private" ? (
@@ -68,7 +97,12 @@ export default function Home() {
           <h2>শুধু নিজের কথা বলুন</h2>
           <p>এই জায়গার লেখা পাবলিক ফিডে প্রকাশ করা হবে না। তবে persistent private storage এখনো production database-এর সঙ্গে সংযুক্ত হয়নি—তাই এই সংস্করণে লেখা সংরক্ষণের ভান করা হচ্ছে না।</p>
           <textarea value={message} onChange={e => setMessage(e.target.value)} placeholder="আপনি কী বলতে চান লিখুন..." />
+          <button className="primary" onClick={() => submitPrivate("private_share")} disabled={loading || !message.trim()}>
+            {loading ? "সংরক্ষণ হচ্ছে..." : "ব্যক্তিগতভাবে পাঠান"}
+          </button>
           <button className="secondary" onClick={() => setMessage("")}>মুছে ফেলুন</button>
+          {saved && <p className="successText">ব্যক্তিগতভাবে গ্রহণ করা হয়েছে।</p>}
+          {error && <p className="errorText">{error}</p>}
         </section>
       ) : (
         <>
