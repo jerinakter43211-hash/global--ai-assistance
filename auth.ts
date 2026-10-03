@@ -23,11 +23,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async signIn({ user }) {
       return isConfiguredAdmin(user.email);
     },
-    async authorized({ auth, request }) {
-      if (!request.nextUrl.pathname.startsWith("/admin")) return true;
-      if (request.nextUrl.pathname === "/admin/sign-in") return true;
-      return isConfiguredAdmin(auth?.user?.email);
-    },
   },
   trustHost: true,
 });
