@@ -11,12 +11,14 @@
   "dependencies": {
     "next": "latest",
     "next-auth": "latest",
+    "pg": "latest",
     "react": "latest",
     "react-dom": "latest"
   },
   "devDependencies": {
     "typescript": "latest",
     "@types/node": "latest",
+    "@types/pg": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest"
   }
