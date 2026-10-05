@@ -8,6 +8,7 @@ function ema(values:number[], period:number) {
   return e;
 }
 function rsi(values:number[], period=14) {
+  if(values.length<=period) return 50;
   let gain=0,loss=0;
   for(let i=1;i<=period;i++){const d=values[i]-values[i-1]; if(d>=0) gain+=d; else loss-=d;}
   gain/=period; loss/=period;
@@ -18,22 +19,28 @@ export async function GET(req:Request){
   const {searchParams}=new URL(req.url);
   const market=searchParams.get("market")||"crypto";
   const symbol=searchParams.get("symbol")||"BTCUSDT";
-  if(market!=="crypto") return NextResponse.json({market,symbol,action:"NO TRADE",reason:"লাইভ Forex data provider এখনো সংযুক্ত নয়। ডেটা ছাড়া অনুমান করে signal দেওয়া হবে না।",timeframe:"1H"});
+  const interval=searchParams.get("interval")||"5m";
+  if(!["1m","5m","15m"].includes(interval)) return NextResponse.json({error:"Invalid timeframe"},{status:400});
+  if(market!=="crypto") return NextResponse.json({market,symbol,action:"NO TRADE",reason:"লাইভ Forex candle provider এখনো সংযুক্ত নয়। ডেটা ছাড়া CALL/PUT অনুমান করে দেওয়া হবে না।",timeframe:interval,expiry:"—"});
   if(!/^[A-Z0-9]{5,12}$/.test(symbol)) return NextResponse.json({error:"Invalid symbol"},{status:400});
   try{
-    const url="https://data-api.binance.vision/api/v3/klines?symbol="+encodeURIComponent(symbol)+"&interval=1h&limit=120";
+    const url="https://data-api.binance.vision/api/v3/klines?symbol="+encodeURIComponent(symbol)+"&interval="+interval+"&limit=120";
     const r=await fetch(url,{cache:"no-store"});
     if(!r.ok) throw new Error("Market data unavailable");
     const candles=(await r.json()) as Candle[];
     const closes=candles.map(c=>Number(c[4])).filter(Number.isFinite);
     if(closes.length<60) throw new Error("Not enough market data");
-    const price=closes[closes.length-1], fast=ema(closes.slice(-80),20), slow=ema(closes.slice(-100),50), rv=rsi(closes,14);
-    const action=fast>slow && rv>=52 && rv<=70 ? "BUY" : fast<slow && rv>=30 && rv<=48 ? "SELL" : "NO TRADE";
-    const recentHigh=Math.max(...closes.slice(-14)), recentLow=Math.min(...closes.slice(-14));
-    const distance=Math.max(price*0.008,(recentHigh-recentLow)*0.35);
-    const stopLoss=action==="BUY"?price-distance:action==="SELL"?price+distance:null;
-    const takeProfit=action==="BUY"?price+distance*3:action==="SELL"?price-distance*3:null;
-    const score=action==="NO TRADE"?Math.round(Math.min(65,50+Math.abs(rv-50))):Math.round(Math.min(85,60+Math.abs(rv-50)*1.2));
-    return NextResponse.json({market,symbol,action,price:Number(price.toFixed(6)),stopLoss:stopLoss?Number(stopLoss.toFixed(6)):null,takeProfit:takeProfit?Number(takeProfit.toFixed(6)):null,setupScore:score,timeframe:"1H",reason:action==="BUY"?"20 EMA > 50 EMA এবং RSI momentum BUY-এর পক্ষে।":action==="SELL"?"20 EMA < 50 EMA এবং RSI momentum SELL-এর পক্ষে।":"EMA/RSI confirmation পরিষ্কার নয়—capital protection-এর জন্য NO TRADE।"});
+    const price=closes[closes.length-1];
+    const fast=ema(closes.slice(-60),9), slow=ema(closes.slice(-80),21), rv=rsi(closes,14);
+    const last=closes[closes.length-1], prev=closes[closes.length-2];
+    const momentum=last>prev ? 1 : last<prev ? -1 : 0;
+    const bullish=fast>slow && rv>=52 && rv<=68 && momentum>0;
+    const bearish=fast<slow && rv>=32 && rv<=48 && momentum<0;
+    const action=bullish?"CALL":bearish?"PUT":"NO TRADE";
+    const alignment=action==="NO TRADE"?0:Math.min(3,(fast>slow)==(action==="CALL")?1:0)+((rv>=52&&action==="CALL")||(rv<=48&&action==="PUT")?1:0)+(momentum===(action==="CALL"?1:-1)?1:0);
+    const setupScore=action==="NO TRADE"?Math.round(50+Math.min(15,Math.abs(rv-50))):Math.round(65+alignment*7);
+    const expiry=interval==="1m"?"1–2 মিনিট":interval==="5m"?"5–10 মিনিট":"15–30 মিনিট";
+    const reason=action==="CALL"?"9 EMA > 21 EMA, RSI bullish zone এবং শেষ candle momentum ঊর্ধ্বমুখী।":action==="PUT"?"9 EMA < 21 EMA, RSI bearish zone এবং শেষ candle momentum নিম্নমুখী।":"EMA, RSI ও momentum একই দিকে নিশ্চিত নয়—তাই NO TRADE।";
+    return NextResponse.json({market,symbol,action,price:Number(price.toFixed(6)),setupScore,timeframe:interval,expiry,rsi:Number(rv.toFixed(2)),reason});
   }catch(e){return NextResponse.json({error:e instanceof Error?e.message:"Market data unavailable"},{status:503});}
 }
