@@ -64,26 +64,6 @@ function TradingPanel() {
   </section>;
 }
 
-
-  const [market, setMarket] = useState("crypto");
-  const [symbol, setSymbol] = useState("BTCUSDT");
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const symbols = market === "crypto" ? ["BTCUSDT","ETHUSDT","BNBUSDT","SOLUSDT"] : ["EURUSD","GBPUSD","USDJPY","XAUUSD"];
-  async function loadSignal() {
-    setLoading(true); setError("");
-    try {
-      const res = await fetch("/api/trading/signal?market="+market+"&symbol="+symbol, { cache: "no-store" });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json?.error || "Signal পাওয়া যায়নি");
-      setData(json);
-    } catch (e) { setError(e instanceof Error ? e.message : "অনুরোধ ব্যর্থ হয়েছে"); }
-    finally { setLoading(false); }
-  }
-  return <section className="panel tradingPanel"><span className="pill">📈 Safety-first Trading</span><h2>Forex + Crypto Signal</h2><p>এটি শিক্ষামূলক market setup। কোনো সিগন্যালই লাভ বা loss-free trading নিশ্চিত করতে পারে না।</p><div className="signalControls"><select value={market} onChange={e => {setMarket(e.target.value); setSymbol(e.target.value === "crypto" ? "BTCUSDT" : "EURUSD"); setData(null);}}><option value="crypto">Crypto</option><option value="forex">Forex</option></select><select value={symbol} onChange={e => setSymbol(e.target.value)}>{symbols.map(s => <option key={s}>{s}</option>)}</select><button className="primary" onClick={loadSignal} disabled={loading}>{loading ? "বিশ্লেষণ হচ্ছে..." : "Signal দেখুন"}</button></div>{error && <p className="errorText">{error}</p>}{data && <div className="signalCard"><div className="signalAction">{data.action}</div><div className="signalGrid"><div><span>Market</span><b>{data.market} / {data.symbol}</b></div><div><span>Price</span><b>{data.price ?? "—"}</b></div><div><span>Stop Loss</span><b>{data.stopLoss ?? "—"}</b></div><div><span>Take Profit</span><b>{data.takeProfit ?? "—"}</b></div><div><span>Setup score</span><b>{data.setupScore != null ? data.setupScore+"/100" : "—"}</b></div><div><span>Timeframe</span><b>{data.timeframe ?? "1H"}</b></div></div><p>{data.reason}</p><div className="safetyBox">⚠️ প্রতি ট্রেডে ছোট ঝুঁকি রাখুন, stop-loss ছাড়া trade করবেন না, leverage/martingale এড়িয়ে চলুন।</div></div>}</section>;
-}
-
 export default function Home() {
   const [tab, setTab] = useState("home");
   const [message, setMessage] = useState("");
