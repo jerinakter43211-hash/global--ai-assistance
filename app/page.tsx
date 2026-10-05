@@ -15,6 +15,56 @@ const features = [
 ];
 
 function TradingPanel() {
+  const [mode, setMode] = useState("expert");
+  const [market, setMarket] = useState("crypto");
+  const [symbol, setSymbol] = useState("BTCUSDT");
+  const [interval, setInterval] = useState("5m");
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const symbols = market === "crypto" ? ["BTCUSDT","ETHUSDT","BNBUSDT","SOLUSDT"] : ["EURUSD","GBPUSD","USDJPY","XAUUSD"];
+  async function loadSignal() {
+    setLoading(true); setError("");
+    try {
+      const res = await fetch("/api/trading/signal?market="+market+"&symbol="+symbol+"&interval="+interval+"&mode="+mode, { cache: "no-store" });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error || "Signal পাওয়া যায়নি");
+      setData(json);
+    } catch (e) { setError(e instanceof Error ? e.message : "অনুরোধ ব্যর্থ হয়েছে"); }
+    finally { setLoading(false); }
+  }
+  return <section className="panel tradingPanel">
+    <span className="pill">🎯 ExpertOption Signal Mode</span>
+    <h2>ExpertOption-এর জন্য CALL / PUT Signal</h2>
+    <p>সিগন্যালটি বাজারের public candle data বিশ্লেষণ করে। ExpertOption-এর নিজস্ব quote/OTC feed আলাদা হলে ফল ভিন্ন হতে পারে। কোনো signal-ই নিশ্চিত লাভ বা zero-loss নিশ্চিত করে না।</p>
+    <div className="signalControls">
+      <select value={market} onChange={e => {setMarket(e.target.value); setSymbol(e.target.value === "crypto" ? "BTCUSDT" : "EURUSD"); setData(null);}}>
+        <option value="crypto">Crypto</option><option value="forex">Forex</option>
+      </select>
+      <select value={symbol} onChange={e => setSymbol(e.target.value)}>{symbols.map(s => <option key={s}>{s}</option>)}</select>
+      <select value={interval} onChange={e => {setInterval(e.target.value); setData(null);}}>
+        <option value="1m">1 মিনিট</option><option value="5m">5 মিনিট</option><option value="15m">15 মিনিট</option>
+      </select>
+      <button className="primary" onClick={loadSignal} disabled={loading}>{loading ? "বিশ্লেষণ হচ্ছে..." : "Signal দেখুন"}</button>
+    </div>
+    {error && <p className="errorText">{error}</p>}
+    {data && <div className="signalCard">
+      <div className={"signalAction "+(data.action === "CALL" ? "callAction" : data.action === "PUT" ? "putAction" : "noTradeAction")}>{data.action}</div>
+      <div className="signalGrid">
+        <div><span>Asset</span><b>{data.symbol}</b></div>
+        <div><span>Current price</span><b>{data.price ?? "—"}</b></div>
+        <div><span>Setup score</span><b>{data.setupScore != null ? data.setupScore+"/100" : "—"}</b></div>
+        <div><span>Chart</span><b>{data.timeframe ?? interval}</b></div>
+        <div><span>Suggested expiry</span><b>{data.expiry ?? "—"}</b></div>
+        <div><span>RSI</span><b>{data.rsi ?? "—"}</b></div>
+      </div>
+      <p><b>কারণ:</b> {data.reason}</p>
+      <div className="safetyBox">⚠️ Signal পাওয়ার পরও নিজে chart মিলিয়ে নিন। একবারে অল্প অর্থ ব্যবহার করুন, ধারাবাহিক loss হলে থামুন এবং signal পরিষ্কার না হলে NO TRADE নিন।</div>
+    </div>}
+  </section>;
+}
+
+
   const [market, setMarket] = useState("crypto");
   const [symbol, setSymbol] = useState("BTCUSDT");
   const [data, setData] = useState<any>(null);
