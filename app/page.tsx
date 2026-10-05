@@ -34,7 +34,7 @@ function TradingPanel() {
     finally { setLoading(false); }
   }
   return <section className="panel tradingPanel">
-    <span className="pill">🎯 ExpertOption Signal Mode</span>
+    <span className="pill">🤖 ExpertOption Signal Bot</span>
     <h2>ExpertOption-এর জন্য CALL / PUT Signal</h2>
     <p>সিগন্যালটি বাজারের public candle data বিশ্লেষণ করে। ExpertOption-এর নিজস্ব quote/OTC feed আলাদা হলে ফল ভিন্ন হতে পারে। কোনো signal-ই নিশ্চিত লাভ বা zero-loss নিশ্চিত করে না।</p>
     <div className="signalControls">
